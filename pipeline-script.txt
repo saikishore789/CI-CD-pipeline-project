@@ -61,5 +61,29 @@ pipeline {
                 sh "trivy image ashfaque9x/youtube-clone:latest > trivyimage.txt" 
             }
         }
+          stage('Deploy to Kubernets'){
+            steps{
+                script{
+                    dir('kubernetes') {
+                      withKubeConfig(caCertificate: '', clusterName: '', contextName: '', credentialsId: 'kubernetes', namespace: '', restrictKubeConfigAccess: false, serverUrl: '') {
+                      sh 'kubectl delete --all pods'
+                      sh 'kubectl apply -f deployment.yaml'
+                      sh 'kubectl apply -f service.yaml'
+                      }   
+                    }
+                }
+            }
+        }
+    }
+    post {
+     always {
+        emailext attachLog: true,
+            subject: "'${currentBuild.result}'",
+            body: "Project: ${env.JOB_NAME}<br/>" +
+                "Build Number: ${env.BUILD_NUMBER}<br/>" +
+                "URL: ${env.BUILD_URL}<br/>",
+            to: 'saikishorereddy789@gmail.com',                              
+            attachmentsPattern: 'trivyfs.txt,trivyimage.txt'
+        }
     }
 }
